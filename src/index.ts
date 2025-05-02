@@ -1,20 +1,17 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { Address, createPublicClient, createWalletClient, formatEther, http, parseEther, parseUnits } from 'viem'
+import { Address, createPublicClient, createWalletClient, extractChain, formatEther, http, parseEther, parseUnits } from 'viem'
 import { localhost, anvil } from 'viem/chains'
 import { privateKeyToAccount } from "viem/accounts";
 
-// Viem Setup
-const publicClient = createPublicClient({
-    chain: anvil,
-    transport: http(),
-})
 
-const walletClient = createWalletClient({
-    chain: anvil,
-    transport: http()
-})
+const chainId = process.env.CHAIN_ID
+
+if (!chainId) {
+    console.error("CHAIN ID not set");
+    process.exit(1);
+}
 
 const privateKey = process.env.PRIVATE_KEY
 
@@ -22,6 +19,24 @@ if (!privateKey) {
     console.error("PRIVATE KEY not set");
     process.exit(1);
 }
+
+const chain = extractChain({
+    chains: [anvil, localhost],
+    id: Number(chainId) as any,
+})
+
+// Viem Setup
+const publicClient = createPublicClient({
+    chain: chain,
+    transport: http(),
+})
+
+const walletClient = createWalletClient({
+    chain: chain,
+    transport: http()
+})
+
+
 const account = privateKeyToAccount(privateKey as Address)
 
 // Create server instance
